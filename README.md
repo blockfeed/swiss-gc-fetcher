@@ -10,9 +10,9 @@ It downloads the latest (or a tagged/previous) release asset, extracts the corre
   - **picoboot**: installs `ipl.dol` and merges the Apploader payload.
   - **gcloader**: installs `boot.iso` from the GCLoader payload and merges the Apploader payload.
 - **Optional `--cubeboot` (picoboot only)**:
-  - Fetches the latest `cubeboot.dol` from OffBroadway/cubeboot.
+  - Fetches the latest [`cubeboot.dol`](https://github.com/OffBroadway/cubeboot) from OffBroadway/cubeboot.
   - Installs `cubeboot.dol` as `/ipl.dol` and Swiss as `/boot.dol`.
-  - If `/cubeboot.ini` is missing at SD root, fetches it from the latest cubeboot release and installs it.
+  - If `/cubeboot.ini` is missing at SD root, fetches it from the latest [cubeboot release](https://github.com/OffBroadway/cubeboot/releases) and installs it.
 - **Safety (GCLoader)**: releases **v0.6r1695 through v0.6r1867 are blacklisted** due to a bricking risk (especially on **GCLoader HW1**). These will never be installed when using `--device gcloader`.
 - **Hiding files**: `--hide-files` applies FAT hidden attributes to **`*.dol`, `*.ini`, `GBI`, `MCBACKUP`, `swiss`** using [`fatattr`](https://tracker.debian.org/pkg/fatattr).  
   - `fatattr` is available via Debian/Ubuntu and also in the [AUR](https://aur.archlinux.org/packages/fatattr).
