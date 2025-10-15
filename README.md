@@ -14,7 +14,8 @@ This script automates that process with a single command.
 - Devices supported:
   - **picoboot**: installs `ipl.dol` and merges the Apploader payload.
   - **gcloader**: installs `boot.iso` from the GCLoader payload and merges the Apploader payload.
-- Safe handling: for GCLoader, releases **v0.6r1695 through v0.6r1867 are blacklisted** due to a bricking risk (especially on GCLoader HW1). These will never be installed by this tool.
+- **Optional `--cubeboot` integration** (picoboot only): downloads the latest `cubeboot.dol` from OffBroadway/cubeboot, installs it as `ipl.dol`, and writes Swiss as `boot.dol`. Apploader merge still happens.
+- **Safety**: for GCLoader, releases **v0.6r1695 through v0.6r1867 are blacklisted** due to a bricking risk (especially on **GCLoader HW1**). These will never be installed by this tool.
 - Optional `--hide-files` flag: applies FAT hidden attributes with [`fatattr`](https://tracker.debian.org/pkg/fatattr).  
   - `fatattr` is packaged for Debian/Ubuntu and is also available in the [AUR](https://aur.archlinux.org/packages/fatattr).
 - Safe by default: `--dry-run` for simulation, `--force` required to overwrite.
@@ -44,6 +45,9 @@ python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device picoboot --dry-run
 # Install latest Swiss Picoboot payload
 python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device picoboot
 
+# Install latest Swiss Picoboot payload with Cubeboot as IPL (Swiss as boot.dol)
+python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device picoboot --cubeboot
+
 # Install latest Swiss GCLoader payload (safe versions only)
 python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device gcloader
 
@@ -64,6 +68,7 @@ python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device picoboot --hide-fil
 
 - `--sd-root PATH` : SD card root mount point
 - `--device NAME` : Target device (`picoboot` or `gcloader`)
+- `--cubeboot` : (picoboot only) install `cubeboot.dol` as `ipl.dol` and Swiss as `boot.dol`
 - `--dry-run` : Show actions without making changes
 - `--force` : Allow overwriting existing files
 - `--hide-files` : Apply FAT hidden attribute via `fatattr`

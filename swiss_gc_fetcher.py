@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-swiss_gc_fetcher.py (v0.4.0)
+swiss_gc_fetcher.py (v0.5.2)
 
 Downloads a Swiss (GameCube) release ASSET (compiled binaries) and installs
 payloads for a selected device to an SD card.
@@ -8,6 +8,15 @@ payloads for a selected device to an SD card.
 Supported devices:
   - picoboot   : installs ipl.dol and merges Apploader payload
   - gcloader   : installs boot.iso from GCLoader payload at SD root, and merges Apploader payload
+
+Modifiers:
+  - --cubeboot : additionally downloads the latest cubeboot.dol from OffBroadway/cubeboot.
+                 When used with --device picoboot:
+                   * installs cubeboot.dol as <SD_ROOT>/ipl.dol
+                   * installs Swiss DOL as <SD_ROOT>/boot.dol
+                   * if <SD_ROOT>/cubeboot.ini is missing, downloads the latest cubeboot.ini and places it at SD root
+                 Apploader merge still occurs.
+                 (Ignored for --device gcloader; a warning is printed.)
 
 Key flags:
   --device <name>          : Required. One of: picoboot, gcloader
@@ -17,6 +26,7 @@ Key flags:
   --force                  : Overwrite files if present
   --dry-run                : Simulate actions
   --verbose                : Extra diagnostics
+  --cubeboot               : See 'Modifiers' above
 
 Notes for --device gcloader (IMPORTANT):
   - Swiss releases v0.6r1695 through v0.6r1867 are BLOCKED for GCLoader installs due to bricking risk.
@@ -29,8 +39,13 @@ Safe extraction:
   - Uses tarfile.extractall(..., filter="data") to avoid Python 3.14 warnings and block unsafe members.
 
 Examples:
-  python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device picoboot --dry-run
+  # Picoboot + Cubeboot (cubeboot -> ipl.dol, Swiss -> boot.dol), ensure cubeboot.ini present
+  python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device picoboot --cubeboot
+
+  # GCLoader previous official (blocks risky window automatically)
   python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device gcloader --previous-release
+
+  # Picoboot pinned tag
   python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device picoboot --tag v0.6r1913 --hide-files --force
 """
 
@@ -50,32 +65,26 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List
 
 API_BASE = "https://api.github.com/repos/emukidid/swiss-gc/releases"
-# Accept names like "swiss_r1913.tar.xz" (case-insensitive)
+CUBEBOOT_API_BASE = "https://api.github.com/repos/OffBroadway/cubeboot/releases"
+
 RE_DISTRIB_LOOSE = re.compile(r"swiss_r(?P<rev>\d+)\.(?P<ext>tar\.xz|7z)$", re.IGNORECASE)
-# Blocked tag range for GCLoader (inclusive)
-BLOCK_MIN = 1695
-BLOCK_MAX = 1867
 
 def log(msg): print(msg, flush=True)
 
 def http_get_json(url):
     req = urllib.request.Request(url, headers={
-        "User-Agent": "swiss-gc-fetcher/0.4.0",
+        "User-Agent": "swiss-gc-fetcher/0.5.2",
         "Accept": "application/vnd.github+json",
     })
     with urllib.request.urlopen(req) as f:
         return json.load(f)
 
 def download(url, dest):
-    req = urllib.request.Request(url, headers={"User-Agent": "swiss-gc-fetcher/0.4.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": "swiss-gc-fetcher/0.5.2"})
     with urllib.request.urlopen(req) as resp, open(dest, "wb") as out:
         shutil.copyfileobj(resp, out)
 
 def pick_asset(assets, verbose=False):
-    """
-    Pick best asset: prefer .tar.xz then .7z; highest rev.
-    Returns dict with keys: name, url, ext, rev
-    """
     candidates = []
     names = []
     for a in assets or []:
@@ -167,9 +176,6 @@ def set_hidden_attributes(sd_root: Path, dry_run: bool):
                     log(f"WARNING: could not run fatattr on {m}: {e}")
 
 def is_blocked_for_gcloader(tag_name: str) -> bool:
-    """
-    Return True if tag_name (e.g., 'v0.6r1799') is within the blocked GCLoader range.
-    """
     if not tag_name:
         return False
     m = re.search(r"r(\d+)$", tag_name, re.IGNORECASE)
@@ -179,9 +185,6 @@ def is_blocked_for_gcloader(tag_name: str) -> bool:
     return 1695 <= rev <= 1867
 
 def choose_release(args):
-    """
-    Decide which release JSON to use, honoring --tag, --previous-release, and device-specific constraints.
-    """
     device = args.device.lower().strip()
     want_prev = bool(args.previous_release)
     if args.tag:
@@ -190,9 +193,7 @@ def choose_release(args):
             raise RuntimeError(f"Selected tag {rel.get('tag_name')} is blocked for --device gcloader (risk of bricking). Choose a safe tag.")
         return rel
 
-    # fetch list of releases (first page should suffice for latest/previous)
     releases = http_get_json(API_BASE)
-    # filter official (non-draft, non-prerelease)
     official = [r for r in releases if not r.get("draft") and not r.get("prerelease")]
     if not official:
         raise RuntimeError("No official releases found via GitHub API.")
@@ -220,6 +221,22 @@ def choose_release(args):
         return alt
     return latest
 
+def fetch_cubeboot_asset(temp_dir: Path, name_exact: str, fallback_ext: str) -> Path:
+    rel = http_get_json(f"{CUBEBOOT_API_BASE}/latest")
+    assets = rel.get("assets") or []
+    asset = next((a for a in assets if a.get("name") == name_exact), None)
+    if not asset:
+        asset = next((a for a in assets if str(a.get("name","")).lower().endswith(fallback_ext)), None)
+    if not asset:
+        raise RuntimeError(f"Could not find {name_exact} in the latest OffBroadway/cubeboot release assets.")
+    url = asset.get("browser_download_url")
+    if not url:
+        raise RuntimeError(f"{name_exact} asset missing download URL.")
+    dest = temp_dir / name_exact
+    log(f"Downloading {name_exact}: {url}")
+    download(url, str(dest))
+    return dest
+
 def main():
     ap = argparse.ArgumentParser(
         description=(
@@ -239,6 +256,11 @@ def main():
     ap.add_argument("--hide-files", action="store_true",
                     help="Set FAT hidden attribute on *.dol, GBI, MCBACKUP, swiss using 'fatattr' (requires 'fatattr' in PATH)")
     ap.add_argument("--verbose", action="store_true", help="Print diagnostic details (e.g., asset names if no match)")
+    ap.add_argument("--cubeboot", action="store_true",
+                    help=("Also install cubeboot: downloads OffBroadway/cubeboot latest cubeboot.dol; "
+                          "for --device picoboot writes cubeboot -> ipl.dol and Swiss -> boot.dol; "
+                          "if cubeboot.ini is missing at SD root, downloads it too; "
+                          "Apploader merge still occurs. Ignored for gcloader."))
     args = ap.parse_args()
 
     sd_root = Path(args.sd_root)
@@ -294,15 +316,47 @@ def main():
                 if not dol_file:
                     log(f"ERROR: could not find {dol_rel} inside extracted asset")
                     sys.exit(5)
-                ipl_dest = sd_root / "ipl.dol"
-                if ipl_dest.exists() and not args.force:
-                    log(f"ERROR: {ipl_dest} exists. Use --force to overwrite.")
-                    sys.exit(6)
-                log(f"Installing IPL DOL: {dol_file} -> {ipl_dest}")
-                os.makedirs(ipl_dest.parent, exist_ok=True)
-                shutil.copy2(dol_file, ipl_dest)
+
+                if args.cubeboot:
+                    try:
+                        cubeboot_path = fetch_cubeboot_asset(tmp, "cubeboot.dol", ".dol")
+                    except Exception as e:
+                        log(f"ERROR: failed to fetch cubeboot.dol: {e}")
+                        sys.exit(6)
+                    ipl_dest = sd_root / "ipl.dol"
+                    if ipl_dest.exists() and not args.force:
+                        log(f"ERROR: {ipl_dest} exists. Use --force to overwrite.")
+                        sys.exit(7)
+                    boot_dol_dest = sd_root / "boot.dol"
+                    if boot_dol_dest.exists() and not args.force:
+                        log(f"ERROR: {boot_dol_dest} exists. Use --force to overwrite.")
+                        sys.exit(8)
+                    log(f"Installing cubeboot -> {ipl_dest}")
+                    shutil.copy2(cubeboot_path, ipl_dest)
+                    log(f"Installing Swiss DOL -> {boot_dol_dest}")
+                    shutil.copy2(dol_file, boot_dol_dest)
+                    ini_dest = sd_root / "cubeboot.ini"
+                    if not ini_dest.exists():
+                        try:
+                            ini_path = fetch_cubeboot_asset(tmp, "cubeboot.ini", ".ini")
+                            log(f"Installing cubeboot.ini -> {ini_dest}")
+                            shutil.copy2(ini_path, ini_dest)
+                        except Exception as e:
+                            log(f"WARNING: could not fetch cubeboot.ini: {e}")
+                    else:
+                        log(f"cubeboot.ini already present at {ini_dest}; leaving as-is")
+                else:
+                    ipl_dest = sd_root / "ipl.dol"
+                    if ipl_dest.exists() and not args.force:
+                        log(f"ERROR: {ipl_dest} exists. Use --force to overwrite.")
+                        sys.exit(6)
+                    log(f"Installing IPL DOL: {dol_file} -> {ipl_dest}")
+                    os.makedirs(ipl_dest.parent, exist_ok=True)
+                    shutil.copy2(dol_file, ipl_dest)
 
         elif args.device == "gcloader":
+            if args.cubeboot:
+                log("NOTICE: --cubeboot is ignored for --device gcloader (no DOL boot at SD root).")
             gcl_zip_rel = f"swiss_r{rev}/GCLoader/EXTRACT_TO_ROOT.zip"
             if args.dry_run:
                 log(f"(dry-run) would search for {gcl_zip_rel} and {apploader_zip_rel}")
