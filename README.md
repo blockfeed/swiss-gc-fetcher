@@ -28,7 +28,7 @@ It downloads the latest (or a tagged/previous) release asset, extracts the corre
 ## Installation
 
 ```bash
-git clone https://github.com/<your-username>/swiss-gc-fetcher.git
+git clone https://github.com/blockfeed/swiss-gc-fetcher.git
 cd swiss-gc-fetcher
 ```
 
