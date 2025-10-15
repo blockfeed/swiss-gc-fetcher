@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-swiss_gc_fetcher.py (v0.5.2)
+swiss_gc_fetcher.py (v0.5.3)
 
 Downloads a Swiss (GameCube) release ASSET (compiled binaries) and installs
 payloads for a selected device to an SD card.
@@ -22,7 +22,7 @@ Key flags:
   --device <name>          : Required. One of: picoboot, gcloader
   --previous-release       : Use the previous official release (skips drafts/prereleases)
   --tag <tag>              : Use a specific tag (e.g., v0.6r1913). Overrides --previous-release
-  --hide-files             : Apply FAT hidden attribute via 'fatattr' to (*.dol, GBI, MCBACKUP, swiss)
+  --hide-files             : Apply FAT hidden attribute via 'fatattr' to (*.dol, *.ini, GBI, MCBACKUP, swiss)
   --force                  : Overwrite files if present
   --dry-run                : Simulate actions
   --verbose                : Extra diagnostics
@@ -73,14 +73,14 @@ def log(msg): print(msg, flush=True)
 
 def http_get_json(url):
     req = urllib.request.Request(url, headers={
-        "User-Agent": "swiss-gc-fetcher/0.5.2",
+        "User-Agent": "swiss-gc-fetcher/0.5.3",
         "Accept": "application/vnd.github+json",
     })
     with urllib.request.urlopen(req) as f:
         return json.load(f)
 
 def download(url, dest):
-    req = urllib.request.Request(url, headers={"User-Agent": "swiss-gc-fetcher/0.5.2"})
+    req = urllib.request.Request(url, headers={"User-Agent": "swiss-gc-fetcher/0.5.3"})
     with urllib.request.urlopen(req) as resp, open(dest, "wb") as out:
         shutil.copyfileobj(resp, out)
 
@@ -154,7 +154,7 @@ def fatattr_available():
     return shutil.which("fatattr") is not None
 
 def set_hidden_attributes(sd_root: Path, dry_run: bool):
-    patterns = ["*.dol", "GBI", "MCBACKUP", "swiss"]
+    patterns = ["*.dol", "*.ini", "GBI", "MCBACKUP", "swiss"]
     fa = shutil.which("fatattr")
     if not fa:
         log("NOTICE: --hide-files requested but 'fatattr' was not found in PATH. Skipping hide step.")
@@ -254,7 +254,7 @@ def main():
                     help="Use the previous official release (skips drafts/prereleases and blocked gcloader versions)")
     ap.add_argument("--force", action="store_true", help="Overwrite existing files")
     ap.add_argument("--hide-files", action="store_true",
-                    help="Set FAT hidden attribute on *.dol, GBI, MCBACKUP, swiss using 'fatattr' (requires 'fatattr' in PATH)")
+                    help="Set FAT hidden attribute on *.dol, *.ini, GBI, MCBACKUP, swiss using 'fatattr' (requires 'fatattr' in PATH)")
     ap.add_argument("--verbose", action="store_true", help="Print diagnostic details (e.g., asset names if no match)")
     ap.add_argument("--cubeboot", action="store_true",
                     help=("Also install cubeboot: downloads OffBroadway/cubeboot latest cubeboot.dol; "
