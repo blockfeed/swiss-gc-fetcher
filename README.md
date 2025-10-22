@@ -9,6 +9,7 @@ It downloads the latest (or a tagged/previous) release asset, extracts the corre
 - Devices supported:
   - **picoboot**: installs `ipl.dol` and merges the Apploader payload.
   - **gcloader**: installs `boot.iso` from the GCLoader payload and merges the Apploader payload.
+  - **picoloader**: extracts **GEKKOBOOT** from the Swiss release (`Picoloader/` folder) and installs **`/ipl.dol`** and the **`/swiss/`** folder (contains `apploader.img`).
 - **Optional `--cubeboot` (picoboot only)**:
   - Fetches the latest [`cubeboot.dol`](https://github.com/OffBroadway/cubeboot) from OffBroadway/cubeboot.
   - Installs `cubeboot.dol` as `/ipl.dol` and Swiss as `/boot.dol`.
@@ -49,6 +50,12 @@ python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device picoboot --cubeboot
 # GCLoader (Swiss GCLoader payload -> /boot.iso; merge Apploader; blocks risky revisions)
 python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device gcloader
 
+# Picoloader (GEKKOBOOT: installs /ipl.dol and /swiss/ from the Picoloader package)
+python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device picoloader
+
+# Picoloader overwrite case (remove any existing boot.dol/ipl.dol)
+python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device picoloader --force
+
 # Use the previous official release instead of latest
 python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device gcloader --previous-release
 
@@ -75,6 +82,11 @@ python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device picoboot --hide-fil
 - `--verbose` : Print extra diagnostic details
 
 ## Notes
+
+- **Picoloader specifics**:
+  - `--device picoloader` will **not** accept `--cubeboot`; they are incompatible.
+  - Picoloader expects `ipl.dol` at SD root and a `/swiss/` folder containing `apploader.img`.
+    If `boot.dol` or `ipl.dol` already exist at SD root, pass `--force` (the tool will remove/replace them) or delete them manually before running.
 
 - The tool blocks Swiss releases **v0.6r1695..v0.6r1867** when `--device gcloader` is selected, due to a **bricking risk** (reported particularly for **GCLoader HW1**). If you specify a blocked tag explicitly, the tool will exit with an error.
 - When `--hide-files` is used, this tool requires `fatattr` in `PATH`. If it’s not found, the tool will log a notice and skip the hiding step.

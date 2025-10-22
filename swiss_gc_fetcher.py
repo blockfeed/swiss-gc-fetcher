@@ -8,6 +8,7 @@ payloads for a selected device to an SD card.
 Supported devices:
   - picoboot   : installs ipl.dol and merges Apploader payload
   - gcloader   : installs boot.iso from GCLoader payload at SD root, and merges Apploader payload
+  - picoloader : extracts GEKKOBOOT (Picoloader) package -> installs ipl.dol and swiss/ (incl. apploader.img)
 
 Modifiers:
   - --cubeboot : additionally downloads the latest cubeboot.dol from OffBroadway/cubeboot.
@@ -246,8 +247,8 @@ def main():
         )
     )
     ap.add_argument("--sd-root", required=True, help="SD card root path (e.g. /media/SDCARD)")
-    ap.add_argument("--device", required=True, choices=["picoboot", "gcloader"],
-                    help="Target device (picoboot or gcloader). gcloader blocks v0.6r1695..v0.6r1867 for safety.")
+    ap.add_argument("--device", required=True, choices=["picoboot", "gcloader", "picoloader"],
+                    help="Target device (picoboot, gcloader, picoloader). gcloader blocks v0.6r1695..v0.6r1867 for safety.")
     ap.add_argument("--dry-run", action="store_true", help="Print actions without writing")
     ap.add_argument("--tag", help="Release tag to use (e.g. v0.6r1913). Overrides --previous-release")
     ap.add_argument("--previous-release", action="store_true",
@@ -399,9 +400,17 @@ def main():
 
             src_swiss = ap_out / "swiss"
             dst_swiss = sd_root / "swiss"
-            log(f"Merging {src_swiss} -> {dst_swiss}")
-            merge_directories(src_swiss, dst_swiss, dry_run=False, overwrite=args.force)
-            log(f"Expect: {dst_swiss / 'patches' / 'apploader.img'}")
+            # Ensure the apploader is refreshed for ALL devices
+            dst_apploader = dst_swiss / "patches" / "apploader.img"
+            if dst_apploader.exists():
+                try:
+                    log(f"Removing existing apploader: {dst_apploader}")
+                    dst_apploader.unlink()
+                except Exception as e:
+                    log(f"WARNING: failed to remove {dst_apploader}: {e}")
+            log(f"Merging {src_swiss} -> {dst_swiss} (overwrite apploader)")
+            merge_directories(src_swiss, dst_swiss, dry_run=False, overwrite=True)
+            log(f"Refreshed: {dst_swiss / 'patches' / 'apploader.img'}")
 
         if args.hide_files:
             if fatattr_available():
