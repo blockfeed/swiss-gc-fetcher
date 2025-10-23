@@ -15,7 +15,7 @@ It downloads the latest (or a tagged/previous) release asset, extracts the corre
   - Installs `cubeboot.dol` as `/ipl.dol` and Swiss as `/boot.dol`.
   - If `/cubeboot.ini` is missing at SD root, fetches it from the latest [cubeboot release](https://github.com/OffBroadway/cubeboot/releases) and installs it.
 - **Safety (GCLoader)**: releases **v0.6r1695 through v0.6r1867 are blacklisted** due to a bricking risk (especially on **GCLoader HW1**). These will never be installed when using `--device gcloader`.
-- **Hiding files**: `--hide-files` applies FAT hidden attributes to **`*.dol`, `*.ini`, `GBI`, `MCBACKUP`, `swiss`** using [`fatattr`](https://tracker.debian.org/pkg/fatattr).  
+- **Hiding files**: `--hide-files` applies FAT hidden attributes to **`*.dol`, `*.ini`, `*.cli`, `GBI`, `MCBACKUP`, `swiss`** using [`fatattr`](https://tracker.debian.org/pkg/fatattr).  
   - `fatattr` is available via Debian/Ubuntu and also in the [AUR](https://aur.archlinux.org/packages/fatattr).
 - Safe by default: `--dry-run` for simulation, `--force` required to overwrite.
 
@@ -65,7 +65,7 @@ python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device picoboot --tag v0.6
 # Force overwrite existing files
 python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device picoboot --force
 
-# Hide files/folders (requires fatattr; hides *.dol, *.ini, GBI, MCBACKUP, swiss)
+# Hide files/folders (requires fatattr; hides *.dol, *.ini, *.cli, GBI, MCBACKUP, swiss)
 python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device picoboot --hide-files
 ```
 
@@ -76,7 +76,7 @@ python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device picoboot --hide-fil
 - `--cubeboot` : (picoboot only) install `cubeboot.dol` as `ipl.dol`, Swiss as `boot.dol`, fetch `cubeboot.ini` if missing
 - `--dry-run` : Show actions without making changes
 - `--force` : Allow overwriting existing files
-- `--hide-files` : Apply FAT hidden attribute (**`*.dol`, `*.ini`, `GBI`, `MCBACKUP`, `swiss`**) via `fatattr`
+- `--hide-files` : Apply FAT hidden attribute (**`*.dol`, `*.ini`, `*.cli`, `GBI`, `MCBACKUP`, `swiss`**) via `fatattr`
 - `--tag TAG` : Use a specific Swiss release tag instead of latest (e.g. `v0.6r1913`)
 - `--previous-release` : Use the previous official Swiss release (skips drafts, prereleases, and blacklisted GCLoader versions)
 - `--verbose` : Print extra diagnostic details

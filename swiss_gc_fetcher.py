@@ -155,7 +155,7 @@ def fatattr_available():
     return shutil.which("fatattr") is not None
 
 def set_hidden_attributes(sd_root: Path, dry_run: bool):
-    patterns = ["*.dol", "*.ini", "GBI", "MCBACKUP", "swiss"]
+    patterns = ["*.dol", "*.ini", "*.cli", "GBI", "MCBACKUP", "swiss"]
     fa = shutil.which("fatattr")
     if not fa:
         log("NOTICE: --hide-files requested but 'fatattr' was not found in PATH. Skipping hide step.")
