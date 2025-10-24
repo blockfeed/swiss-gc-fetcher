@@ -1,7 +1,5 @@
 # Swiss GC Fetcher
 
-Installs the latest (or a specific) Swiss release to an SD card for GameCube homebrew setups.
-
 ## Features
 - Fetches latest (or `--tag`/`--previous-release`) Swiss from `emukidid/swiss-gc`.
 - Devices:
@@ -10,8 +8,6 @@ Installs the latest (or a specific) Swiss release to an SD card for GameCube hom
   - **gcloader**: installs `boot.iso` from the GCLoader package and merges Apploader payload.
 - **Apploader is always refreshed**: removes `/swiss/patches/apploader.img` first, then merges new one.
 - `--hide-files` uses `fatattr` to hide: **`*.dol`**, **`*.ini`**, **`*.cli`**, **`GBI`**, **`MCBACKUP`**, **`swiss`** (recursive).
-- [`fatattr`](https://tracker.debian.org/pkg/fatattr) installed if using `--hide-files` (Debian/Ubuntu package or AUR)
-- Optional: `7z`/`7za` if only `.7z` release assets are available
 
 - **Cubeboot** (OffBroadway) support for **picoboot** via `--cubeboot`.
 - **Cubiboot** (makeo) support for **picoboot & picoloader** via `--cubiboot`:
@@ -31,6 +27,11 @@ python3 swiss_gc_fetcher.py --help
 ```
 
 ## Usage
+
+- Optional `--hide-files` flag: applies FAT hidden attributes with [`fatattr`](https://tracker.debian.org/pkg/fatattr). 
+ 
+  - `fatattr` is packaged for Debian/Ubuntu and is also available in the [AUR](https://aur.archlinux.org/packages/fatattr).
+
 **Picoboot (standard):**
 ```bash
 python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device picoboot
@@ -77,18 +78,6 @@ python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device picoboot --tag v0.6
 - **gcloader**: both `--cubeboot` and `--cubiboot` are ignored with a notice.
 - **Overwrite**: pass `--force` to replace existing `/ipl.dol`, `/boot.dol`, `/boot.iso`, `/swiss-gc.dol`.
 - **Apploader**: The script deletes `/swiss/patches/apploader.img` and merges the new Apploader payload every run.
-
-## Verification
-Dry-run a full install without touching the SD card:
-```bash
-python3 swiss_gc_fetcher.py --sd-root /media/SDCARD --device picoloader --cubiboot --dry-run --verbose
-```
-Expected: messages about downloading Swiss, extracting, finding Picoloader/GEKKOBOOT, installing `ipl.dol`, placing `swiss-gc.dol`, and merging Apploader.
-
-## Troubleshooting
-- **.7z asset error**: install `py7zr` or re-run with a release that has a `.tar.xz` asset.
-- **Permission denied**: run with appropriate privileges for your mounting setup.
-- **fatattr missing**: install `fatattr` or omit `--hide-files`.
 - **Overwrite errors**: re-run with `--force` or remove the files manually.
 
 ## License
