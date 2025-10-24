@@ -27,7 +27,9 @@ This script automates that process with a single command.
 - Python 3.8+
 - Internet access
 - Optional: `py7zr` if you want to install from a `.7z` Swiss release asset (`pip install py7zr`)
-- (optional) `fatattr` in PATH for `--hide-files`
+- Optional `--hide-files` flag: applies FAT hidden attributes with [`fatattr`](https://tracker.debian.org/pkg/fatattr).
+- `fatattr` is packaged for Debian/Ubuntu and is also available in the [AUR](https://aur.archlinux.org/packages/fatattr).
+
 
 ## Install
 No install required—run the script directly:
@@ -36,10 +38,6 @@ python3 swiss_gc_fetcher.py --help
 ```
 
 ## Usage
-
-- Optional `--hide-files` flag: applies FAT hidden attributes with [`fatattr`](https://tracker.debian.org/pkg/fatattr). 
- 
-  - `fatattr` is packaged for Debian/Ubuntu and is also available in the [AUR](https://aur.archlinux.org/packages/fatattr).
 
 **Picoboot (standard):**
 ```bash
