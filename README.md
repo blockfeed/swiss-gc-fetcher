@@ -1,5 +1,14 @@
 # Swiss GC Fetcher
 
+A utility to streamline updates of [Swiss](https://github.com/emukidid/swiss-gc) on GameCube SD cards.  
+It automatically downloads the latest (or a tagged) release asset, extracts the correct payloads, and installs them onto an SD card.
+
+## Motivation
+
+Updating Swiss manually requires downloading release archives, extracting the correct files, and merging folders.  
+This script automates that process with a single command.
+
+
 ## Features
 - Fetches latest (or `--tag`/`--previous-release`) Swiss from `emukidid/swiss-gc`.
 - Devices:
